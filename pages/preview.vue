@@ -4,9 +4,9 @@
 const route = useRoute()
 
 const current = ref(
-  (Array.isArray(route.query.theme) ? route.query.theme[0] : route.query.theme) || 'classic',
+  (Array.isArray(route.query.theme) ? route.query.theme[0] : route.query.theme) || THEMES[0].value,
 )
-if (!THEMES.some(t => t.value === current.value)) current.value = 'classic'
+if (!THEMES.some(t => t.value === current.value)) current.value = THEMES[0].value
 
 const data = computed(() => sampleLetter(current.value))
 

@@ -13,7 +13,7 @@ function mockVars(t: ThemeDef) {
 }
 
 const form = reactive({
-  theme: 'classic',
+  theme: 'gift',
   sender: '',
   recipient: '',
   startDate: '',

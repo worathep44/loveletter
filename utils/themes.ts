@@ -12,52 +12,16 @@ export interface ThemeDef {
 
 export const THEMES: ThemeDef[] = [
   {
-    value: 'classic',
-    label: 'คลาสสิก',
-    desc: 'ครีม–ไวน์–ทอง วินเทจอบอุ่น',
-    swatch: { gate: '#7C2B39', paper: '#FCF8F0', primary: '#7C2B39', accent: '#C39A4B', seal: '#C9506A' },
-  },
-  {
-    value: 'cutie',
-    label: 'คิวตี้ 🎀',
-    desc: 'สแครปบุ๊ก แนบรูป+การ์ตูน น่ารักวัยรุ่น',
-    swatch: { gate: '#ff4d9d', paper: '#fff6fb', primary: '#ff2e8b', accent: '#8b5cf6', seal: '#ff6aa5' },
-  },
-  {
-    value: 'vhs',
-    label: 'เรโทร VHS 📼',
-    desc: 'กล้องฟิล์มยุค 2000s · REC + scanline เท่ๆ',
-    swatch: { gate: '#0d110d', paper: '#100e0c', primary: '#46f27a', accent: '#ffb638', seal: '#46f27a' },
-  },
-  {
     value: 'gift',
     label: 'เซอร์ไพรส์ 🎁',
     desc: 'เปิดกล่องของขวัญ · รูปหมุน 3D + คอนเฟตตี',
     swatch: { gate: '#3a1a5c', paper: '#180f2e', primary: '#ffd66b', accent: '#ff5fa8', seal: '#ff4d6d' },
   },
   {
-    value: 'valentine',
-    label: 'วาเลนไทน์',
-    desc: 'ชมพู–แดง–ทอง หวานสดใส',
-    swatch: { gate: '#e23b6d', paper: '#fff5f8', primary: '#e23b6d', accent: '#ef7fa3', seal: '#ff4d6d' },
-  },
-  {
-    value: 'modern',
-    label: 'โมเดิร์น',
-    desc: 'มินิมอลโทนอุ่น เรียบหรู',
-    swatch: { gate: '#26231f', paper: '#faf7f2', primary: '#26241f', accent: '#b9895a', seal: '#b9895a' },
-  },
-  {
-    value: 'midnight',
-    label: 'มิดไนต์',
-    desc: 'กลางคืน กระดาษเข้ม ทองดาว',
-    swatch: { gate: '#101838', paper: '#141a38', primary: '#e6cf8f', accent: '#8a7bd8', seal: '#6d5fc8' },
-  },
-  {
-    value: 'sakura',
-    label: 'ซากุระ',
-    desc: 'พาสเทลชมพู น่ารักละมุน',
-    swatch: { gate: '#e23b6d', paper: '#fffafc', primary: '#d76e9c', accent: '#e89ab8', seal: '#ef8fb0' },
+    value: 'galaxy',
+    label: 'กาแล็กซี 🌌',
+    desc: 'พุ่งสู่อวกาศ · รูปเป็นดวงดาว → รวมเป็นหัวใจ',
+    swatch: { gate: '#0d0722', paper: '#05030f', primary: '#ffd66b', accent: '#b98cff', seal: '#ff5f9e' },
   },
 ]
 

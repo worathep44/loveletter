@@ -7,6 +7,7 @@ const theme = computed(() => props.data?.theme || 'classic')
 const isCutie = computed(() => theme.value === 'cutie')
 const isVhs = computed(() => theme.value === 'vhs')
 const isGift = computed(() => theme.value === 'gift')
+const isGalaxy = computed(() => theme.value === 'galaxy')
 
 // รูปทั้งหมด (hero + อัลบั้ม + ทุกช่วง) สำหรับวงล้อหมุนของธีมของขวัญ — ตัดซ้ำ
 const giftPhotos = computed(() => {
@@ -84,7 +85,9 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
 </script>
 
 <template>
-  <div class="desk" :class="'theme-' + theme">
+  <GalaxyScene v-if="isGalaxy" :data="data" />
+
+  <div v-else class="desk" :class="'theme-' + theme">
     <div class="phone" :class="{ open: opened }">
       <!-- SEAL GATE -->
       <div class="gate" :class="{ open: opened }" @click="open">
