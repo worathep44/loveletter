@@ -5,17 +5,33 @@ const props = defineProps<{ data: any }>()
 
 const theme = computed(() => props.data?.theme || 'classic')
 const isCutie = computed(() => theme.value === 'cutie')
+const isVhs = computed(() => theme.value === 'vhs')
 
-// ฟอนต์ลายมือน่ารักเฉพาะธีมคิวตี้ (โหลดจาก Google Fonts เมื่อจำเป็น)
-if (theme.value === 'cutie') {
+// โหลดฟอนต์เฉพาะธีมที่ต้องใช้ (Google Fonts)
+const fontHref: Record<string, string> = {
+  cutie: 'https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@500;600&display=swap',
+  vhs: 'https://fonts.googleapis.com/css2?family=VT323&display=swap',
+}
+if (fontHref[theme.value]) {
   useHead({
     link: [
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
       { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@500;600&display=swap' },
+      { rel: 'stylesheet', href: fontHref[theme.value] },
     ],
   })
 }
+
+// timestamp มุมจอสไตล์กล้องแคมคอร์เดอร์ (จากวันเริ่มคบ) เช่น "FEB 14 2022  AM 12:00"
+const vhsStamp = computed(() => {
+  const s = props.data?.startDate
+  if (!s) return 'REC  ●'
+  const d = new Date(s + 'T00:00:00')
+  if (Number.isNaN(d.getTime())) return String(s)
+  const mon = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][d.getMonth()]
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${mon} ${dd} ${d.getFullYear()}  AM 12:00`
+})
 
 const opened = ref(false)
 const days = ref(0)
@@ -62,6 +78,9 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
 
       <!-- ชั้นหัวใจ/ประกายลอย (เฉพาะคิวตี้) -->
       <CutieDeco v-if="isCutie && opened" />
+
+      <!-- ชั้น OSD กล้อง VHS (เฉพาะธีมเรโทร) -->
+      <VhsOverlay v-if="isVhs" :stamp="vhsStamp" />
 
       <!-- LETTER -->
       <div class="scroll">
@@ -193,6 +212,16 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
   --hair:rgba(255,94,162,.30); --film-1:#ff9ec2; --film-2:#c86fd0;
   --font-display:"Itim","Mali","Sarabun",cursive;
 }
+.theme-vhs{
+  --desk-1:#1a1613; --desk-2:#0d0b0a; --desk-3:#050403;
+  --paper:#100e0c; --ink:#d7e8cf; --ink-soft:#8fa588;
+  --primary:#46f27a; --accent:#ffb638; --accent-2:#ff5a5a;
+  --seal-a:#5cff8e; --seal-b:#2fae5a; --seal-c:#123018; --seal-fg:#061007;
+  --gate-a:#161d17; --gate-b:#0c110d; --gate-c:#040605; --gate-fg:#46f27a;
+  --hero-glow:#0e1c12; --card:#161513; --card-2:#0e0d0b;
+  --hair:rgba(70,242,122,.26); --film-1:#0d1a10; --film-2:#123018;
+  --font-display:"VT323","Courier New",monospace;
+}
 
 /* ============ โครง (ใช้ตัวแปรข้างบน) ============ */
 .desk{
@@ -323,6 +352,40 @@ section{padding:0 30px}
   background:repeating-linear-gradient(45deg,#ffcf8f 0 7px,#ffb0d3 7px 14px);height:22px;opacity:.92}
 .theme-cutie .beat .thumb{border:3px solid #fff;box-shadow:0 12px 26px -12px rgba(200,90,150,.5)}
 @keyframes wiggle{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(1.5deg)}}
+
+/* ===== ธีมเรโทร VHS ===== */
+.theme-vhs{font-family:"VT323","Courier New",monospace}
+.theme-vhs .phone{border-radius:14px;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.85),0 0 0 1px rgba(70,242,122,.16);
+  animation:vflick 5s steps(24) infinite}
+@keyframes vflick{0%,46%,52%,100%{filter:brightness(1)}48%{filter:brightness(1.09)}50%{filter:brightness(.95)}}
+.theme-vhs .names,.theme-vhs .counter .num,.theme-vhs .tl-head h2,.theme-vhs .gate h1{
+  font-family:var(--font-display);text-shadow:0 0 12px rgba(70,242,122,.5),0 0 2px rgba(70,242,122,.85);letter-spacing:.02em}
+.theme-vhs .names{font-weight:400;font-size:clamp(42px,15vw,60px)}
+.theme-vhs .amp{font-family:var(--font-display);font-style:normal;color:var(--accent)}
+.theme-vhs .gate h1 em{color:var(--accent)}
+.theme-vhs .hero .kick,.theme-vhs .gate .kick{font-family:var(--font-display);letter-spacing:.2em;color:var(--primary);font-size:15px;text-transform:uppercase}
+.theme-vhs .counter .num{color:var(--accent);text-shadow:0 0 12px rgba(255,182,56,.5)}
+.theme-vhs .counter .lbl,.theme-vhs .beat .date,.theme-vhs .foot .made{font-family:var(--font-display);letter-spacing:.14em}
+.theme-vhs .counter,.theme-vhs .message{border:1px solid var(--hair);border-radius:6px;box-shadow:inset 0 0 30px rgba(70,242,122,.05)}
+.theme-vhs .message .quote{color:var(--primary)}
+.theme-vhs .sign{font-family:var(--font-display);color:var(--primary);transform:none;font-size:26px;letter-spacing:.04em}
+/* ตราผนึก → ปุ่ม PLAY */
+.theme-vhs .wax{background:radial-gradient(60% 60% at 50% 45%, #163a22 0%, #0c1f12 100%);
+  border:2px solid var(--primary);box-shadow:0 0 26px rgba(70,242,122,.4),inset 0 0 20px rgba(70,242,122,.2)}
+.theme-vhs .wax::before{border-color:rgba(70,242,122,.5)}
+.theme-vhs .wax span{font-size:0}
+.theme-vhs .wax span::after{content:"▶";font-size:42px;color:var(--primary);text-shadow:0 0 14px rgba(70,242,122,.7);margin-left:6px}
+.theme-vhs .tap-hint{font-family:var(--font-display);letter-spacing:.14em;color:var(--primary)}
+/* รูปช่วง = เฟรมฟุตเทจ / ไม่มีรูป = จอ static เข้ม */
+.theme-vhs .beat .thumb{border:1px solid var(--hair);border-radius:4px}
+.theme-vhs .beat .thumb-grad{background:repeating-linear-gradient(rgba(255,255,255,.04) 0 1px, transparent 1px 3px), #0a0f0b !important}
+.theme-vhs .beat .dot{background:var(--primary);box-shadow:0 0 0 4px var(--card-2),0 0 10px rgba(70,242,122,.55)}
+.theme-vhs .timeline::before{opacity:.5}
+/* โพลารอยด์ (ถ้ามีรูป hero) → เฟรมจอ ไม่เอียง ไม่มีเทป */
+.theme-vhs .polaroid{background:#000;padding:6px 6px 0;border:1px solid var(--hair);border-radius:5px;transform:none;box-shadow:0 14px 30px -14px rgba(0,0,0,.7)}
+.theme-vhs .polaroid .tape{display:none}
+.theme-vhs .polaroid .cap{font-family:var(--font-display);color:var(--primary);letter-spacing:.12em}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important}.reveal{opacity:1;transform:none}}
 </style>

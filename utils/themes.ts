@@ -24,6 +24,12 @@ export const THEMES: ThemeDef[] = [
     swatch: { gate: '#ff4d9d', paper: '#fff6fb', primary: '#ff2e8b', accent: '#8b5cf6', seal: '#ff6aa5' },
   },
   {
+    value: 'vhs',
+    label: 'เรโทร VHS 📼',
+    desc: 'กล้องฟิล์มยุค 2000s · REC + scanline เท่ๆ',
+    swatch: { gate: '#0d110d', paper: '#100e0c', primary: '#46f27a', accent: '#ffb638', seal: '#46f27a' },
+  },
+  {
     value: 'valentine',
     label: 'วาเลนไทน์',
     desc: 'ชมพู–แดง–ทอง หวานสดใส',
