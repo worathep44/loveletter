@@ -1,0 +1,23 @@
+# dependencies
+node_modules
+
+# nuxt build output
+.nuxt
+.output
+.data
+dist
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# local database
+*.sqlite
+*.sqlite-*
+data.sqlite
+
+# logs / os
+*.log
+.DS_Store
+.vercel

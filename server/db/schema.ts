@@ -1,7 +1,7 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { pgTable, text, bigint } from 'drizzle-orm/pg-core'
 
 // หนึ่งแถว = หนึ่ง "จดหมายรัก" ที่ลูกค้าสร้าง
-export const pages = sqliteTable('pages', {
+export const pages = pgTable('pages', {
   id: text('id').primaryKey(),            // slug สั้น ใช้เป็น URL /p/:id
   theme: text('theme').notNull().default('classic'),
   sender: text('sender').notNull(),       // ชื่อคนส่ง
@@ -11,7 +11,7 @@ export const pages = sqliteTable('pages', {
   videoUrl: text('video_url'),            // ลิงก์ YouTube/วิดีโอ (เว้นว่างได้)
   timeline: text('timeline'),             // JSON: [{date,title,desc}]
   status: text('status').notNull().default('paid'), // draft | paid  (เผื่อ gate ตอนต่อ payment)
-  createdAt: integer('created_at').notNull(),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull(),
 })
 
 export type Page = typeof pages.$inferSelect

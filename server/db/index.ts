@@ -1,31 +1,36 @@
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { fileURLToPath } from 'node:url'
-import { dirname, resolve } from 'node:path'
+import postgres from 'postgres'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import * as schema from './schema'
 
-// เก็บไฟล์ DB ไว้ที่ราก project (data.sqlite)
-const here = dirname(fileURLToPath(import.meta.url))
-const dbPath = resolve(here, '../../data.sqlite')
+const url = process.env.DATABASE_URL
+if (!url) {
+  throw new Error('DATABASE_URL ยังไม่ได้ตั้งค่า — ใส่ connection string ของ Postgres ในไฟล์ .env')
+}
 
-const sqlite = new Database(dbPath)
-sqlite.pragma('journal_mode = WAL')
+// prepare:false ให้เข้ากันได้กับ connection pooler ของ Supabase/Neon (transaction mode)
+const sql = postgres(url, { prepare: false })
 
-// สร้างตารางถ้ายังไม่มี (prototype: ไม่ต้องรัน migration แยก)
-sqlite.exec(`
-  CREATE TABLE IF NOT EXISTS pages (
-    id TEXT PRIMARY KEY,
-    theme TEXT NOT NULL DEFAULT 'classic',
-    sender TEXT NOT NULL,
-    recipient TEXT NOT NULL,
-    start_date TEXT,
-    message TEXT,
-    video_url TEXT,
-    timeline TEXT,
-    status TEXT NOT NULL DEFAULT 'paid',
-    created_at INTEGER NOT NULL
-  );
-`)
-
-export const db = drizzle(sqlite, { schema })
+export const db = drizzle(sql, { schema })
 export { schema }
+
+// สร้างตารางถ้ายังไม่มี — เรียกครั้งเดียว (กัน top-level await ที่ build target ไม่รองรับ)
+let schemaReady: Promise<unknown> | null = null
+export function ensureSchema() {
+  if (!schemaReady) {
+    schemaReady = sql`
+      CREATE TABLE IF NOT EXISTS pages (
+        id TEXT PRIMARY KEY,
+        theme TEXT NOT NULL DEFAULT 'classic',
+        sender TEXT NOT NULL,
+        recipient TEXT NOT NULL,
+        start_date TEXT,
+        message TEXT,
+        video_url TEXT,
+        timeline TEXT,
+        status TEXT NOT NULL DEFAULT 'paid',
+        created_at BIGINT NOT NULL
+      );
+    `.catch((e) => { schemaReady = null; throw e })
+  }
+  return schemaReady
+}

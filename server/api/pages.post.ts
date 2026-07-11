@@ -1,10 +1,11 @@
 import { nanoid } from 'nanoid'
 import QRCode from 'qrcode'
-import { db } from '../db'
+import { db, ensureSchema } from '../db'
 import { pages } from '../db/schema'
 
 // POST /api/pages  → สร้างจดหมายใหม่ คืน { id, url, qr }
 export default defineEventHandler(async (event) => {
+  await ensureSchema()
   const body = await readBody(event)
 
   const sender = (body?.sender || '').toString().trim()

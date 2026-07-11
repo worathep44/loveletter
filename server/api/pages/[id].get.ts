@@ -1,11 +1,13 @@
 import { eq } from 'drizzle-orm'
-import { db } from '../../db'
+import { db, ensureSchema } from '../../db'
 import { pages } from '../../db/schema'
 
 // GET /api/pages/:id  → ข้อมูลจดหมายสำหรับ render หน้า /p/:id
 export default defineEventHandler(async (event) => {
+  await ensureSchema()
   const id = getRouterParam(event, 'id') || ''
-  const row = db.select().from(pages).where(eq(pages.id, id)).get()
+  const rows = await db.select().from(pages).where(eq(pages.id, id)).limit(1)
+  const row = rows[0]
 
   if (!row) {
     throw createError({ statusCode: 404, statusMessage: 'ไม่พบจดหมายนี้' })
