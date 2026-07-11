@@ -10,6 +10,7 @@ export const pages = pgTable('pages', {
   message: text('message'),               // ข้อความในจดหมาย
   videoUrl: text('video_url'),            // ลิงก์ YouTube/วิดีโอ (เว้นว่างได้)
   heroPhoto: text('hero_photo'),          // รูปหลัก (URL จาก Supabase Storage) เว้นว่างได้
+  photos: text('photos'),                 // JSON: ["url1","url2",...] อัลบั้มรูป (ธีม gift เอาไปหมุน)
   timeline: text('timeline'),             // JSON: [{date,title,desc,photo}]
   status: text('status').notNull().default('paid'), // draft | paid  (เผื่อ gate ตอนต่อ payment)
   createdAt: bigint('created_at', { mode: 'number' }).notNull(),

@@ -4,11 +4,10 @@
 const props = defineProps<{ photos: string[] }>()
 
 const display = computed(() => {
-  const p = (props.photos || []).filter(Boolean).slice(0, 12)
-  const out: (string | null)[] = [...p]
-  const min = 6
-  while (out.length < min) out.push(null)
-  return out
+  const p = (props.photos || []).filter(Boolean).slice(0, 14)
+  // มีรูปจริง → ใช้รูปจริงล้วน (ไม่ปน placeholder); ไม่มีรูปเลย → โชว์การ์ดประกาย 6 ใบ
+  if (p.length) return p as (string | null)[]
+  return [null, null, null, null, null, null]
 })
 const count = computed(() => display.value.length)
 const radius = computed(() => Math.round(Math.max(150, 82 / Math.tan(Math.PI / count.value))))

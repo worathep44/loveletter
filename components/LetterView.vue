@@ -8,10 +8,14 @@ const isCutie = computed(() => theme.value === 'cutie')
 const isVhs = computed(() => theme.value === 'vhs')
 const isGift = computed(() => theme.value === 'gift')
 
-// รูปทั้งหมด (hero + ทุกช่วง) สำหรับวงล้อหมุนของธีมของขวัญ
+// รูปทั้งหมด (hero + อัลบั้ม + ทุกช่วง) สำหรับวงล้อหมุนของธีมของขวัญ — ตัดซ้ำ
 const giftPhotos = computed(() => {
-  const list = [props.data?.heroPhoto, ...((props.data?.timeline || []).map((b: any) => b?.photo))]
-  return list.filter(Boolean)
+  const list = [
+    props.data?.heroPhoto,
+    ...(props.data?.photos || []),
+    ...((props.data?.timeline || []).map((b: any) => b?.photo)),
+  ].filter(Boolean)
+  return [...new Set(list)]
 })
 
 // ข้อความบอกวิธีเปิด ต่างกันตามธีม
@@ -156,6 +160,15 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
                 <h3>{{ b.title }}</h3>
                 <p>{{ b.desc }}</p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="data.photos?.length && !isGift" class="album reveal">
+          <div class="tl-head"><h2>อัลบั้มของเรา</h2></div>
+          <div class="album-grid" :class="{ one: data.photos.length === 1 }">
+            <div v-for="(p, i) in data.photos" :key="i" class="acell">
+              <img :src="p" alt="" loading="lazy" />
             </div>
           </div>
         </section>
@@ -355,6 +368,13 @@ section{padding:0 30px}
 .polaroid .cap{text-align:center;padding:9px 6px 12px;color:var(--ink-soft);font-size:15px;font-family:var(--font-display,inherit)}
 .polaroid .tape{position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-3deg);
   width:78px;height:20px;background:rgba(160,140,120,.32);border-radius:2px}
+
+/* ===== อัลบั้มรูป (กริด — ธีมที่ไม่ใช่ gift) ===== */
+.album{padding:0 30px}
+.album-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 8px}
+.album-grid.one{grid-template-columns:1fr;max-width:78%;margin-inline:auto}
+.acell{aspect-ratio:1;border-radius:13px;overflow:hidden;border:1px solid var(--hair);box-shadow:0 12px 28px -16px rgba(0,0,0,.55)}
+.acell img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* ===== ธีมคิวตี้: ปรับแต่งพิเศษ ===== */
 .theme-cutie{

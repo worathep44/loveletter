@@ -19,6 +19,11 @@ export default defineEventHandler(async (event) => {
   if (Array.isArray(timeline)) timeline = JSON.stringify(timeline)
   else if (typeof timeline !== 'string') timeline = null
 
+  // photos: อัลบั้มรูป (array ของ URL)
+  let photos = body?.photos
+  if (Array.isArray(photos)) photos = JSON.stringify(photos.filter(Boolean))
+  else if (typeof photos !== 'string') photos = null
+
   const id = nanoid(10)
   await db.insert(pages).values({
     id,
@@ -29,6 +34,7 @@ export default defineEventHandler(async (event) => {
     message: body?.message ? body.message.toString() : null,
     videoUrl: body?.videoUrl ? body.videoUrl.toString() : null,
     heroPhoto: body?.heroPhoto ? body.heroPhoto.toString() : null,
+    photos,
     timeline,
     status: 'paid',
     createdAt: Date.now(),

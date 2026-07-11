@@ -75,6 +75,7 @@ export function sampleLetter(theme: string) {
     days: 1244,
     videoUrl: '',
     heroPhoto: '',
+    photos: [],
     message:
       'ตั้งแต่วันที่ได้เจอเธอ โลกของฉันก็มีสีขึ้นมาเลย\nขอบคุณที่คอยอยู่ข้างกันเสมอนะ วันนี้ พรุ่งนี้ และตลอดไป 💗',
     timeline: [

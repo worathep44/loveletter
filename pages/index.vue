@@ -76,6 +76,24 @@ async function pickBeat(e: Event, i: number) {
   finally { beatUploading[i] = false; (e.target as HTMLInputElement).value = '' }
 }
 
+// อัลบั้มรูป — เลือกหลายไฟล์พร้อมกัน
+const photos = ref<string[]>([])
+const galleryUploading = ref(false)
+const galleryProgress = ref('')
+async function pickPhotos(e: Event) {
+  const files = Array.from((e.target as HTMLInputElement).files || [])
+  if (!files.length) return
+  galleryUploading.value = true; errorMsg.value = ''
+  try {
+    for (let i = 0; i < files.length; i++) {
+      galleryProgress.value = `${i + 1}/${files.length}`
+      photos.value.push(await uploadFile(files[i]))
+    }
+  } catch { errorMsg.value = 'อัปโหลดบางรูปไม่สำเร็จ (เช็ค SUPABASE_SERVICE_KEY)' }
+  finally { galleryUploading.value = false; galleryProgress.value = ''; (e.target as HTMLInputElement).value = '' }
+}
+function removePhoto(i: number) { photos.value.splice(i, 1) }
+
 const loading = ref(false)
 const result = ref<{ id: string; url: string; qr: string } | null>(null)
 const justCreated = ref(false)
@@ -136,7 +154,7 @@ async function submit() {
     const cleanTimeline = timeline.value.filter(b => b.title.trim() || b.desc.trim() || b.photo)
     const res = await $fetch<{ id: string; url: string; qr: string }>('/api/pages', {
       method: 'POST',
-      body: { ...form, timeline: cleanTimeline },
+      body: { ...form, photos: photos.value, timeline: cleanTimeline },
     })
     result.value = res
     justCreated.value = true
@@ -229,6 +247,20 @@ function reset() {
             <label class="uplabel" :class="{ busy: heroUploading }">
               <input type="file" accept="image/*" @change="pickHero" :disabled="heroUploading" />
               {{ heroUploading ? 'กำลังอัปโหลด...' : (form.heroPhoto ? '🔁 เปลี่ยนรูป' : '＋ เลือกรูป') }}
+            </label>
+          </div>
+        </div>
+
+        <div class="fld">
+          <span>อัลบั้มรูป <em>(เลือกได้หลายรูปพร้อมกัน — ธีมเซอร์ไพรส์ 🎁 เอาไปหมุนโชว์)</em></span>
+          <div class="gallery-up">
+            <div v-for="(p, i) in photos" :key="i" class="gthumb">
+              <img :src="p" alt="" />
+              <button type="button" class="gx" @click="removePhoto(i)">✕</button>
+            </div>
+            <label class="gadd" :class="{ busy: galleryUploading }">
+              <input type="file" accept="image/*" multiple @change="pickPhotos" :disabled="galleryUploading" />
+              <span>{{ galleryUploading ? galleryProgress : '＋' }}</span>
             </label>
           </div>
         </div>
@@ -425,6 +457,17 @@ function reset() {
 .uplabel.busy{opacity:.6;cursor:default}
 .uplabel input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .uplabel.busy input{pointer-events:none}
+
+.gallery-up{display:flex;flex-wrap:wrap;gap:9px}
+.gthumb{position:relative;width:70px;height:70px;border-radius:11px;overflow:hidden;box-shadow:0 6px 16px -8px rgba(120,60,40,.5)}
+.gthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.gx{position:absolute;top:2px;right:2px;width:19px;height:19px;border:none;border-radius:50%;
+  background:rgba(20,16,18,.72);color:#fff;font-size:10px;cursor:pointer;display:grid;place-items:center;line-height:1}
+.gadd{position:relative;width:70px;height:70px;border-radius:11px;border:1.5px dashed #e6c3ae;
+  background:#fff6f0;display:grid;place-items:center;cursor:pointer;color:#c0562f;font-size:22px;font-weight:600}
+.gadd.busy{opacity:.6;font-size:13px}
+.gadd input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.gadd.busy input{pointer-events:none}
 .rm{border:none;background:#f4e3dc;color:#c0304a;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:13px}
 .ghost{border:1px solid #e6d5c4;background:#fff;color:#c0562f;padding:6px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600}
 
