@@ -4,6 +4,18 @@
 const props = defineProps<{ data: any }>()
 
 const theme = computed(() => props.data?.theme || 'classic')
+const isCutie = computed(() => theme.value === 'cutie')
+
+// ฟอนต์ลายมือน่ารักเฉพาะธีมคิวตี้ (โหลดจาก Google Fonts เมื่อจำเป็น)
+if (theme.value === 'cutie') {
+  useHead({
+    link: [
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@500;600&display=swap' },
+    ],
+  })
+}
 
 const opened = ref(false)
 const days = ref(0)
@@ -48,6 +60,9 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
         <div class="tap-hint">✦ แตะตราผนึกเพื่อเปิด ✦</div>
       </div>
 
+      <!-- ชั้นหัวใจ/ประกายลอย (เฉพาะคิวตี้) -->
+      <CutieDeco v-if="isCutie && opened" />
+
       <!-- LETTER -->
       <div class="scroll">
         <section class="hero">
@@ -57,6 +72,18 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
           </div>
           <div v-if="data.startDate" class="subtitle reveal d3">ตั้งแต่วันที่เราเจอกัน · {{ data.startDate }}</div>
         </section>
+
+        <!-- รูปหลัก (โพลารอยด์) — มีรูปก็โชว์รูป, ธีมคิวตี้ไม่มีรูปก็ใส่การ์ตูนให้ -->
+        <div v-if="data.heroPhoto || isCutie" class="hero-photo reveal d3">
+          <div class="polaroid">
+            <div class="tape"></div>
+            <div class="pic">
+              <img v-if="data.heroPhoto" :src="data.heroPhoto" alt="" loading="lazy" />
+              <CartoonArt v-else :i="0" />
+            </div>
+            <div class="cap">{{ data.recipient }} &amp; {{ data.sender }}</div>
+          </div>
+        </div>
 
         <div v-if="data.days !== null && data.days !== undefined" class="counter reveal d4">
           <div class="lbl">เรารักกันมาแล้ว</div>
@@ -81,7 +108,11 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
             <div v-for="(b, i) in data.timeline" :key="i" class="beat reveal">
               <div class="dot"></div>
               <div class="card">
-                <div class="thumb" :class="themeColors[i % 3]"></div>
+                <div class="thumb" :class="{ framed: b.photo || isCutie }">
+                  <img v-if="b.photo" :src="b.photo" alt="" loading="lazy" />
+                  <CartoonArt v-else-if="isCutie" :i="i + 1" />
+                  <div v-else class="thumb-grad" :class="themeColors[i % 3]"></div>
+                </div>
                 <div v-if="b.date" class="date">{{ b.date }}</div>
                 <h3>{{ b.title }}</h3>
                 <p>{{ b.desc }}</p>
@@ -151,6 +182,16 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
   --gate-a:#f4a0c0; --gate-b:#e888ac; --gate-c:#cf6e94; --gate-fg:#fff5f9;
   --hero-glow:#ffdcea; --card:#ffffff; --card-2:#ffedf5;
   --hair:rgba(215,110,156,.24); --film-1:#c98fb0; --film-2:#e6a9c4;
+}
+.theme-cutie{
+  --desk-1:#ffd6e8; --desk-2:#e0d3ff; --desk-3:#fff0f7;
+  --paper:#fff6fb; --ink:#5b3a5f; --ink-soft:#9a6f92;
+  --primary:#ff2e8b; --accent:#8b5cf6; --accent-2:#ff9f45;
+  --seal-a:#ffb0d3; --seal-b:#ff5fa2; --seal-c:#e5568f; --seal-fg:#ffffff;
+  --gate-a:#ffa6d2; --gate-b:#ff5fa2; --gate-c:#c23e86; --gate-fg:#ffffff;
+  --hero-glow:#ffe0ef; --card:#ffffff; --card-2:#fff0f7;
+  --hair:rgba(255,94,162,.30); --film-1:#ff9ec2; --film-2:#c86fd0;
+  --font-display:"Itim","Mali","Sarabun",cursive;
 }
 
 /* ============ โครง (ใช้ตัวแปรข้างบน) ============ */
@@ -231,7 +272,8 @@ section{padding:0 30px}
 .beat{display:flex;gap:20px;margin-bottom:26px;position:relative}
 .beat .dot{flex:none;width:14px;height:14px;border-radius:50%;margin-top:5px;margin-left:22px;background:var(--seal-b);box-shadow:0 0 0 4px var(--card-2),0 0 0 5px var(--hair)}
 .beat .card{flex:1}
-.beat .thumb{width:100%;aspect-ratio:16/10;border-radius:12px;margin-bottom:10px;box-shadow:0 10px 26px -14px rgba(0,0,0,.5)}
+.beat .thumb{width:100%;aspect-ratio:16/10;border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:0 10px 26px -14px rgba(0,0,0,.5)}
+.beat .thumb img,.beat .thumb .art,.beat .thumb .thumb-grad{width:100%;height:100%;object-fit:cover;display:block}
 .t1{background:linear-gradient(135deg,#f4c9b0,#d98a86)}
 .t2{background:linear-gradient(135deg,#cdb2d8,#9a7bb0)}
 .t3{background:linear-gradient(135deg,#f3d79a,#d99e6a)}
@@ -245,6 +287,42 @@ section{padding:0 30px}
 .foot{padding:40px 30px 54px;text-align:center}
 .foot .heart{font-size:22px;color:var(--seal-b);animation:beat 2.4s ease-in-out infinite}
 .foot .made{margin-top:18px;font-family:"Didot",Georgia,serif;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);opacity:.8}
+
+/* ===== รูปหลัก (โพลารอยด์ — ใช้ได้ทุกธีม) ===== */
+.hero-photo{display:flex;justify-content:center;padding:8px 30px 2px}
+.polaroid{position:relative;background:#fff;padding:11px 11px 0;border-radius:5px;
+  box-shadow:0 16px 34px -16px rgba(0,0,0,.5);transform:rotate(-2.5deg)}
+.polaroid .pic{width:min(280px,70vw);aspect-ratio:4/5;border-radius:3px;overflow:hidden;background:var(--hero-glow)}
+.polaroid .pic img,.polaroid .pic :deep(.art){width:100%;height:100%;object-fit:cover;display:block}
+.polaroid .cap{text-align:center;padding:9px 6px 12px;color:var(--ink-soft);font-size:15px;font-family:var(--font-display,inherit)}
+.polaroid .tape{position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(-3deg);
+  width:78px;height:20px;background:rgba(160,140,120,.32);border-radius:2px}
+
+/* ===== ธีมคิวตี้: ปรับแต่งพิเศษ ===== */
+.theme-cutie{
+  font-family:"Mali","Sarabun",sans-serif;
+  background:
+    radial-gradient(55% 45% at 12% 12%, #ffd6e8 0%, transparent 60%),
+    radial-gradient(50% 42% at 88% 16%, #e2d4ff 0%, transparent 58%),
+    radial-gradient(60% 50% at 50% 104%, #cbf3e2 0%, transparent 55%),
+    #fff0f7 !important;
+}
+.theme-cutie .phone{border-radius:30px;
+  box-shadow:0 40px 90px -30px rgba(200,90,150,.55),0 0 0 3px #fff,0 0 0 5px rgba(255,94,162,.22)}
+.theme-cutie .gate h1,.theme-cutie .names,.theme-cutie .tl-head h2,
+.theme-cutie .counter .num,.theme-cutie .sign,.theme-cutie .polaroid .cap{font-family:var(--font-display)}
+.theme-cutie .gate .kick,.theme-cutie .hero .kick{font-family:var(--font-display);text-transform:none;letter-spacing:.06em;font-size:13px}
+.theme-cutie .names{text-shadow:2px 2px 0 #ffe0ef}
+.theme-cutie .wax{border-radius:50% 50% 48% 48%}
+.theme-cutie .counter,.theme-cutie .message{border:2.5px dashed var(--hair);border-radius:26px}
+.theme-cutie .counter .lbl::after{content:" 💞"}
+.theme-cutie .tl-head h2::after{content:" 🌷"}
+.theme-cutie .sign::after{content:" 💌"}
+.theme-cutie .polaroid{animation:wiggle 4.5s ease-in-out infinite}
+.theme-cutie .polaroid .tape{
+  background:repeating-linear-gradient(45deg,#ffcf8f 0 7px,#ffb0d3 7px 14px);height:22px;opacity:.92}
+.theme-cutie .beat .thumb{border:3px solid #fff;box-shadow:0 12px 26px -12px rgba(200,90,150,.5)}
+@keyframes wiggle{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(1.5deg)}}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important}.reveal{opacity:1;transform:none}}
 </style>

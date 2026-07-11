@@ -17,20 +17,24 @@ export { schema }
 let schemaReady: Promise<unknown> | null = null
 export function ensureSchema() {
   if (!schemaReady) {
-    schemaReady = sql`
-      CREATE TABLE IF NOT EXISTS pages (
-        id TEXT PRIMARY KEY,
-        theme TEXT NOT NULL DEFAULT 'classic',
-        sender TEXT NOT NULL,
-        recipient TEXT NOT NULL,
-        start_date TEXT,
-        message TEXT,
-        video_url TEXT,
-        timeline TEXT,
-        status TEXT NOT NULL DEFAULT 'paid',
-        created_at BIGINT NOT NULL
-      );
-    `.catch((e) => { schemaReady = null; throw e })
+    schemaReady = (async () => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS pages (
+          id TEXT PRIMARY KEY,
+          theme TEXT NOT NULL DEFAULT 'classic',
+          sender TEXT NOT NULL,
+          recipient TEXT NOT NULL,
+          start_date TEXT,
+          message TEXT,
+          video_url TEXT,
+          timeline TEXT,
+          status TEXT NOT NULL DEFAULT 'paid',
+          created_at BIGINT NOT NULL
+        );
+      `
+      // เพิ่มคอลัมน์ใหม่แบบ idempotent (ตารางเดิมที่มีอยู่แล้วจะได้คอลัมน์นี้ด้วย)
+      await sql`ALTER TABLE pages ADD COLUMN IF NOT EXISTS hero_photo TEXT;`
+    })().catch((e) => { schemaReady = null; throw e })
   }
   return schemaReady
 }

@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
     startDate: body?.startDate ? body.startDate.toString() : null,
     message: body?.message ? body.message.toString() : null,
     videoUrl: body?.videoUrl ? body.videoUrl.toString() : null,
+    heroPhoto: body?.heroPhoto ? body.heroPhoto.toString() : null,
     timeline,
     status: 'paid',
     createdAt: Date.now(),

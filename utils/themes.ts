@@ -18,6 +18,12 @@ export const THEMES: ThemeDef[] = [
     swatch: { gate: '#7C2B39', paper: '#FCF8F0', primary: '#7C2B39', accent: '#C39A4B', seal: '#C9506A' },
   },
   {
+    value: 'cutie',
+    label: 'คิวตี้ 🎀',
+    desc: 'สแครปบุ๊ก แนบรูป+การ์ตูน น่ารักวัยรุ่น',
+    swatch: { gate: '#ff4d9d', paper: '#fff6fb', primary: '#ff2e8b', accent: '#8b5cf6', seal: '#ff6aa5' },
+  },
+  {
     value: 'valentine',
     label: 'วาเลนไทน์',
     desc: 'ชมพู–แดง–ทอง หวานสดใส',
@@ -56,12 +62,13 @@ export function sampleLetter(theme: string) {
     startDate: '2022-02-14',
     days: 1244,
     videoUrl: '',
+    heroPhoto: '',
     message:
       'ตั้งแต่วันที่ได้เจอเธอ โลกของฉันก็มีสีขึ้นมาเลย\nขอบคุณที่คอยอยู่ข้างกันเสมอนะ วันนี้ พรุ่งนี้ และตลอดไป 💗',
     timeline: [
-      { date: 'Feb 2022', title: 'ครั้งแรกที่เราเจอกัน', desc: 'วันที่ฟ้าใสเป็นพิเศษ และฉันก็ใจเต้นเป็นพิเศษ' },
-      { date: 'Dec 2022', title: 'ทริปแรกด้วยกัน', desc: 'ทะเลตอนกลางคืน กับมือที่กุมไว้ไม่ปล่อย' },
-      { date: 'วันนี้', title: 'และอีกหลายปีต่อจากนี้', desc: 'ขอเดินไปด้วยกันเรื่อยๆ นะ' },
+      { date: 'Feb 2022', title: 'ครั้งแรกที่เราเจอกัน', desc: 'วันที่ฟ้าใสเป็นพิเศษ และฉันก็ใจเต้นเป็นพิเศษ', photo: '' },
+      { date: 'Dec 2022', title: 'ทริปแรกด้วยกัน', desc: 'ทะเลตอนกลางคืน กับมือที่กุมไว้ไม่ปล่อย', photo: '' },
+      { date: 'วันนี้', title: 'และอีกหลายปีต่อจากนี้', desc: 'ขอเดินไปด้วยกันเรื่อยๆ นะ', photo: '' },
     ],
   }
 }

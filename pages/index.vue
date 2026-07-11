@@ -18,14 +18,63 @@ const form = reactive({
   recipient: '',
   startDate: '',
   videoUrl: '',
+  heroPhoto: '',
   message: '',
 })
 
-const timeline = ref<{ date: string; title: string; desc: string }[]>([
-  { date: '', title: '', desc: '' },
+const timeline = ref<{ date: string; title: string; desc: string; photo: string }[]>([
+  { date: '', title: '', desc: '', photo: '' },
 ])
-function addBeat() { timeline.value.push({ date: '', title: '', desc: '' }) }
+function addBeat() { timeline.value.push({ date: '', title: '', desc: '', photo: '' }) }
 function removeBeat(i: number) { timeline.value.splice(i, 1) }
+
+// ----- อัปโหลดรูป (ย่อในเบราว์เซอร์ก่อนส่งขึ้น Supabase Storage) -----
+const heroUploading = ref(false)
+const beatUploading = reactive<Record<number, boolean>>({})
+
+function compressImage(file: File, max = 1280, quality = 0.82): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, max / Math.max(img.width, img.height))
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('compress fail')), 'image/jpeg', quality)
+    }
+    img.onerror = () => reject(new Error('load fail'))
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+async function uploadFile(file: File): Promise<string> {
+  const blob = await compressImage(file)
+  const fd = new FormData()
+  fd.append('file', blob, 'photo.jpg')
+  const r = await $fetch<{ url: string }>('/api/upload', { method: 'POST', body: fd })
+  return r.url
+}
+
+async function pickHero(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  heroUploading.value = true; errorMsg.value = ''
+  try { form.heroPhoto = await uploadFile(file) }
+  catch { errorMsg.value = 'อัปโหลดรูปไม่สำเร็จ (เช็ค SUPABASE_SERVICE_KEY)' }
+  finally { heroUploading.value = false; (e.target as HTMLInputElement).value = '' }
+}
+
+async function pickBeat(e: Event, i: number) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  beatUploading[i] = true; errorMsg.value = ''
+  try { timeline.value[i].photo = await uploadFile(file) }
+  catch { errorMsg.value = 'อัปโหลดรูปไม่สำเร็จ (เช็ค SUPABASE_SERVICE_KEY)' }
+  finally { beatUploading[i] = false; (e.target as HTMLInputElement).value = '' }
+}
 
 const loading = ref(false)
 const result = ref<{ id: string; url: string; qr: string } | null>(null)
@@ -84,7 +133,7 @@ async function submit() {
   loading.value = true
   result.value = null
   try {
-    const cleanTimeline = timeline.value.filter(b => b.title.trim() || b.desc.trim())
+    const cleanTimeline = timeline.value.filter(b => b.title.trim() || b.desc.trim() || b.photo)
     const res = await $fetch<{ id: string; url: string; qr: string }>('/api/pages', {
       method: 'POST',
       body: { ...form, timeline: cleanTimeline },
@@ -170,6 +219,20 @@ function reset() {
           <input v-model="form.videoUrl" placeholder="https://youtu.be/..." />
         </label>
 
+        <div class="fld">
+          <span>รูปหลัก <em>(รูปคู่ — เว้นว่างได้ ธีมคิวตี้จะใส่การ์ตูนให้)</em></span>
+          <div class="uploader">
+            <div v-if="form.heroPhoto" class="upthumb">
+              <img :src="form.heroPhoto" alt="" />
+              <button type="button" class="upx" @click="form.heroPhoto = ''">✕</button>
+            </div>
+            <label class="uplabel" :class="{ busy: heroUploading }">
+              <input type="file" accept="image/*" @change="pickHero" :disabled="heroUploading" />
+              {{ heroUploading ? 'กำลังอัปโหลด...' : (form.heroPhoto ? '🔁 เปลี่ยนรูป' : '＋ เลือกรูป') }}
+            </label>
+          </div>
+        </div>
+
         <label class="fld">
           <span>ข้อความในจดหมาย</span>
           <textarea v-model="form.message" rows="4" placeholder="เขียนความในใจถึงเขา..."></textarea>
@@ -184,6 +247,11 @@ function reset() {
             <input v-model="b.date" class="mini" placeholder="เช่น Feb 2022" />
             <input v-model="b.title" placeholder="หัวข้อ เช่น ครั้งแรกที่เจอ" />
             <input v-model="b.desc" placeholder="รายละเอียดสั้นๆ" />
+            <label class="beatphoto" :class="{ on: b.photo, busy: beatUploading[i] }" title="แนบรูปช่วงนี้">
+              <input type="file" accept="image/*" @change="e => pickBeat(e, i)" :disabled="beatUploading[i]" />
+              <img v-if="b.photo" :src="b.photo" alt="" />
+              <span v-else>{{ beatUploading[i] ? '…' : '📷' }}</span>
+            </label>
             <button type="button" class="rm" @click="removeBeat(i)" v-if="timeline.length > 1">✕</button>
           </div>
         </div>
@@ -335,9 +403,28 @@ function reset() {
 .tl{margin:6px 0 18px;padding:16px;background:#fbf6f0;border:1px dashed #e6d5c4;border-radius:14px}
 .tl-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .tl-head span{font-size:13px;font-weight:700;color:#5a4a40}
-.beat{display:grid;grid-template-columns:110px 1fr 1.3fr auto;gap:8px;margin-bottom:8px;align-items:center}
-@media(max-width:560px){.beat{grid-template-columns:1fr 1fr;position:relative}}
+.beat{display:grid;grid-template-columns:96px 1fr 1.15fr auto auto;gap:8px;margin-bottom:8px;align-items:center}
+@media(max-width:560px){.beat{grid-template-columns:1fr 1fr auto;position:relative}}
 .beat .mini{max-width:100%}
+.beatphoto{position:relative;width:38px;height:38px;border-radius:9px;border:1.5px dashed #e6d5c4;
+  background:#fbf6f0;display:grid;place-items:center;cursor:pointer;overflow:hidden;font-size:15px}
+.beatphoto.on{border-style:solid;border-color:#e0662f}
+.beatphoto.busy{opacity:.6}
+.beatphoto input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.beatphoto img{width:100%;height:100%;object-fit:cover}
+
+.uploader{display:flex;align-items:center;gap:12px}
+.upthumb{position:relative;width:62px;height:78px;border-radius:10px;overflow:hidden;flex:none;
+  box-shadow:0 8px 20px -10px rgba(120,60,40,.5)}
+.upthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.upx{position:absolute;top:3px;right:3px;width:20px;height:20px;border:none;border-radius:50%;
+  background:rgba(20,16,18,.72);color:#fff;font-size:11px;cursor:pointer;display:grid;place-items:center}
+.uplabel{position:relative;display:inline-flex;align-items:center;cursor:pointer;font-size:14px;font-weight:600;
+  color:#c0562f;background:#fff6f0;border:1.5px dashed #e6c3ae;padding:11px 18px;border-radius:12px;transition:.15s}
+.uplabel:hover{background:#fff0e6;border-color:#e0662f}
+.uplabel.busy{opacity:.6;cursor:default}
+.uplabel input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.uplabel.busy input{pointer-events:none}
 .rm{border:none;background:#f4e3dc;color:#c0304a;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:13px}
 .ghost{border:1px solid #e6d5c4;background:#fff;color:#c0562f;padding:6px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600}
 
