@@ -1,11 +1,16 @@
 <script setup lang="ts">
 useHead({ title: 'สร้างจดหมายรัก · หลังบ้าน' })
 
-const themes = [
-  { value: 'classic', label: 'คลาสสิก (ครีม-ไวน์-ทอง)' },
-  { value: 'modern', label: 'โมเดิร์น (เร็วๆ นี้)', disabled: true },
-  { value: 'valentine', label: 'วาเลนไทน์ (เร็วๆ นี้)', disabled: true },
-]
+// สีสำหรับพรีวิวย่อในการ์ดเลือกธีม (THEMES = auto-import จาก utils/themes.ts)
+function mockVars(t: ThemeDef) {
+  return {
+    '--m-gate': t.swatch.gate,
+    '--m-paper': t.swatch.paper,
+    '--m-primary': t.swatch.primary,
+    '--m-accent': t.swatch.accent,
+    '--m-seal': t.swatch.seal,
+  }
+}
 
 const form = reactive({
   theme: 'classic',
@@ -74,12 +79,30 @@ function reset() {
         <h1>สร้างจดหมายใหม่</h1>
         <p class="sub">กรอกข้อมูล แล้วระบบจะสร้างหน้าเว็บ + QR ให้ทันที</p>
 
-        <label class="fld">
-          <span>ธีม</span>
-          <select v-model="form.theme">
-            <option v-for="t in themes" :key="t.value" :value="t.value" :disabled="t.disabled">{{ t.label }}</option>
-          </select>
-        </label>
+        <div class="fld">
+          <span>ธีม <em>(กดการ์ดเพื่อเลือก · “ดูตัวอย่าง” เปิดหน้าจริง)</em></span>
+          <div class="tcards">
+            <label v-for="t in THEMES" :key="t.value" class="tcard" :class="{ sel: form.theme === t.value }">
+              <input type="radio" :value="t.value" v-model="form.theme" name="theme" />
+              <div class="mock" :style="mockVars(t)">
+                <div class="mock-top">
+                  <div class="mock-seal"></div>
+                </div>
+                <div class="mock-bot">
+                  <div class="mock-name"></div>
+                  <div class="mock-line"></div>
+                  <div class="mock-line short"></div>
+                </div>
+              </div>
+              <div class="tinfo">
+                <strong>{{ t.label }}</strong>
+                <small>{{ t.desc }}</small>
+              </div>
+              <a class="tprev" :href="`/preview?theme=${t.value}`" target="_blank" @click.stop>ดูตัวอย่าง ▸</a>
+              <span class="tcheck">✓</span>
+            </label>
+          </div>
+        </div>
 
         <div class="row">
           <label class="fld">
@@ -201,6 +224,40 @@ function reset() {
   outline:none;border-color:#e0662f;box-shadow:0 0 0 3px rgba(224,102,47,.14)
 }
 .fld textarea{resize:vertical}
+
+/* ===== การ์ดเลือกธีม ===== */
+.tcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:640px){.tcards{grid-template-columns:repeat(2,1fr)}}
+.tcard{
+  position:relative;display:block;cursor:pointer;border:2px solid #ece0d4;border-radius:16px;
+  padding:9px;background:#fff;transition:border-color .15s, box-shadow .15s, transform .12s
+}
+.tcard:hover{transform:translateY(-2px);box-shadow:0 14px 30px -20px rgba(120,60,40,.5)}
+.tcard input{position:absolute;opacity:0;pointer-events:none}
+.tcard.sel{border-color:#e0662f;box-shadow:0 0 0 3px rgba(224,102,47,.14)}
+.mock{border-radius:11px;overflow:hidden;border:1px solid rgba(0,0,0,.06);height:104px;display:flex;flex-direction:column}
+.mock-top{
+  flex:0 0 58%;display:grid;place-items:center;
+  background:radial-gradient(120% 90% at 50% 15%, color-mix(in srgb, var(--m-gate) 78%, #fff) 0%, var(--m-gate) 100%)
+}
+.mock-seal{width:26px;height:26px;border-radius:50%;background:var(--m-seal);
+  box-shadow:inset 0 2px 4px rgba(255,255,255,.4),inset 0 -3px 6px rgba(0,0,0,.25),0 3px 6px -2px rgba(0,0,0,.4)}
+.mock-bot{flex:1;background:var(--m-paper);padding:9px 11px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.mock-name{height:7px;width:62%;border-radius:4px;background:var(--m-primary)}
+.mock-line{height:4px;width:80%;border-radius:3px;background:var(--m-accent);opacity:.65}
+.mock-line.short{width:52%}
+.tinfo{margin:9px 3px 2px}
+.tinfo strong{display:block;font-size:14px;font-weight:700;color:#3a2d26}
+.tinfo small{display:block;font-size:11.5px;color:#a89a8c;margin-top:1px;line-height:1.35}
+.tprev{display:inline-block;margin:6px 3px 2px;font-size:12px;font-weight:600;color:#c0562f;text-decoration:none}
+.tprev:hover{text-decoration:underline}
+.tcheck{
+  position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;
+  background:#e0662f;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;
+  opacity:0;transform:scale(.5);transition:.15s
+}
+.tcard.sel .tcheck{opacity:1;transform:scale(1)}
+
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:520px){.row{grid-template-columns:1fr}}
 
