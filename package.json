@@ -2,10 +2,14 @@
   "name": "loveletter",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
