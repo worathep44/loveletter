@@ -6,6 +6,20 @@ const props = defineProps<{ data: any }>()
 const theme = computed(() => props.data?.theme || 'classic')
 const isCutie = computed(() => theme.value === 'cutie')
 const isVhs = computed(() => theme.value === 'vhs')
+const isGift = computed(() => theme.value === 'gift')
+
+// รูปทั้งหมด (hero + ทุกช่วง) สำหรับวงล้อหมุนของธีมของขวัญ
+const giftPhotos = computed(() => {
+  const list = [props.data?.heroPhoto, ...((props.data?.timeline || []).map((b: any) => b?.photo))]
+  return list.filter(Boolean)
+})
+
+// ข้อความบอกวิธีเปิด ต่างกันตามธีม
+const hintText = computed(() => {
+  if (isGift.value) return '✦ แตะเพื่อเปิดของขวัญ ✦'
+  if (isVhs.value) return '▶ กดเพื่อเล่นเทป'
+  return '✦ แตะตราผนึกเพื่อเปิด ✦'
+})
 
 // โหลดฟอนต์เฉพาะธีมที่ต้องใช้ (Google Fonts)
 const fontHref: Record<string, string> = {
@@ -73,11 +87,14 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
         <div class="kick">a letter for you</div>
         <h1>มีจดหมาย<br>จาก <em>{{ data.sender }}</em> ถึงเธอ</h1>
         <div class="wax"><span>{{ data.sender?.charAt(0) }}</span></div>
-        <div class="tap-hint">✦ แตะตราผนึกเพื่อเปิด ✦</div>
+        <div class="tap-hint">{{ hintText }}</div>
       </div>
 
       <!-- ชั้นหัวใจ/ประกายลอย (เฉพาะคิวตี้) -->
       <CutieDeco v-if="isCutie && opened" />
+
+      <!-- คอนเฟตตี (เฉพาะธีมของขวัญ) -->
+      <Confetti v-if="isGift && opened" />
 
       <!-- ชั้น OSD กล้อง VHS (เฉพาะธีมเรโทร) -->
       <VhsOverlay v-if="isVhs" :stamp="vhsStamp" />
@@ -92,8 +109,11 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
           <div v-if="data.startDate" class="subtitle reveal d3">ตั้งแต่วันที่เราเจอกัน · {{ data.startDate }}</div>
         </section>
 
-        <!-- รูปหลัก (โพลารอยด์) — มีรูปก็โชว์รูป, ธีมคิวตี้ไม่มีรูปก็ใส่การ์ตูนให้ -->
-        <div v-if="data.heroPhoto || isCutie" class="hero-photo reveal d3">
+        <!-- วงล้อรูปหมุน 3D (เฉพาะธีมของขวัญ) -->
+        <PhotoCarousel v-if="isGift" :photos="giftPhotos" class="reveal d3" />
+
+        <!-- รูปหลัก (โพลารอยด์) — มีรูปก็โชว์รูป, ธีมคิวตี้ไม่มีรูปก็ใส่การ์ตูนให้ (ธีมของขวัญโชว์ผ่านวงล้อแทน) -->
+        <div v-if="(data.heroPhoto || isCutie) && !isGift" class="hero-photo reveal d3">
           <div class="polaroid">
             <div class="tape"></div>
             <div class="pic">
@@ -127,7 +147,7 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
             <div v-for="(b, i) in data.timeline" :key="i" class="beat reveal">
               <div class="dot"></div>
               <div class="card">
-                <div class="thumb" :class="{ framed: b.photo || isCutie }">
+                <div v-if="!isGift" class="thumb" :class="{ framed: b.photo || isCutie }">
                   <img v-if="b.photo" :src="b.photo" alt="" loading="lazy" />
                   <CartoonArt v-else-if="isCutie" :i="i + 1" />
                   <div v-else class="thumb-grad" :class="themeColors[i % 3]"></div>
@@ -221,6 +241,15 @@ const embed = computed(() => youtubeEmbed(props.data?.videoUrl || ''))
   --hero-glow:#0e1c12; --card:#161513; --card-2:#0e0d0b;
   --hair:rgba(70,242,122,.26); --film-1:#0d1a10; --film-2:#123018;
   --font-display:"VT323","Courier New",monospace;
+}
+.theme-gift{
+  --desk-1:#3a1a5c; --desk-2:#1a0b2e; --desk-3:#0b0518;
+  --paper:#180f2e; --ink:#f3ecff; --ink-soft:#c3b3e0;
+  --primary:#ffd66b; --accent:#ff5fa8; --accent-2:#7cf5e0;
+  --seal-a:#ff8fb0; --seal-b:#ff4d6d; --seal-c:#c9184a; --seal-fg:#fff;
+  --gate-a:#4a2472; --gate-b:#2a1350; --gate-c:#12082a; --gate-fg:#f3ecff;
+  --hero-glow:#3a2060; --card:#241748; --card-2:#180f2e;
+  --hair:rgba(255,214,107,.30); --film-1:#2a1350; --film-2:#5b2a8c;
 }
 
 /* ============ โครง (ใช้ตัวแปรข้างบน) ============ */
@@ -386,6 +415,36 @@ section{padding:0 30px}
 .theme-vhs .polaroid{background:#000;padding:6px 6px 0;border:1px solid var(--hair);border-radius:5px;transform:none;box-shadow:0 14px 30px -14px rgba(0,0,0,.7)}
 .theme-vhs .polaroid .tape{display:none}
 .theme-vhs .polaroid .cap{font-family:var(--font-display);color:var(--primary);letter-spacing:.12em}
+
+/* ===== ธีมของขวัญ / เซอร์ไพรส์ ===== */
+.theme-gift{
+  background:
+    radial-gradient(50% 40% at 14% 12%, rgba(255,95,168,.34) 0%, transparent 60%),
+    radial-gradient(55% 45% at 86% 18%, rgba(124,245,224,.24) 0%, transparent 58%),
+    radial-gradient(62% 52% at 50% 108%, rgba(185,140,255,.4) 0%, transparent 60%),
+    #0b0518 !important;
+}
+.theme-gift .phone{border-radius:30px;
+  box-shadow:0 40px 100px -28px rgba(120,40,160,.7),0 0 0 1px rgba(255,214,107,.22)}
+.theme-gift .names{text-shadow:0 0 22px rgba(255,214,107,.45)}
+.theme-gift .gate h1 em{color:var(--accent-2)}
+.theme-gift .counter,.theme-gift .message{
+  box-shadow:0 0 34px -6px rgba(255,95,168,.25),inset 0 0 30px rgba(255,214,107,.06)}
+.theme-gift .tl-head h2{text-shadow:0 0 20px rgba(255,95,168,.4)}
+/* ธีมนี้โชว์รูปผ่านวงล้อหมุน → ซ่อนรูปหลัก/รูปช่วงที่ซ้ำ */
+.theme-gift .hero-photo{display:none}
+.theme-gift .beat .thumb{display:none}
+/* ตราผนึก → กล่องของขวัญ (ริบบิ้นทอง + โบว์) */
+.theme-gift .wax{--s:120px;border-radius:14px;overflow:visible;
+  background:linear-gradient(135deg,#ff7aa8,#e0447a);
+  box-shadow:0 16px 34px -10px rgba(200,24,74,.6),inset 0 2px 8px rgba(255,255,255,.35),inset 0 -10px 20px rgba(0,0,0,.25)}
+.theme-gift .wax::before{content:"";position:absolute;inset:0;border:none;border-radius:14px;
+  background:
+    linear-gradient(var(--primary),var(--primary)) 50% 0/15px 100% no-repeat,
+    linear-gradient(var(--primary),var(--primary)) 0 50%/100% 15px no-repeat}
+.theme-gift .wax span{font-size:0}
+.theme-gift .wax span::after{content:"🎀";font-size:46px;position:absolute;top:-32px;left:50%;transform:translateX(-50%)}
+.theme-gift .tap-hint{color:var(--gate-fg)}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important}.reveal{opacity:1;transform:none}}
 </style>

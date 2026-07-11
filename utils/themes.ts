@@ -30,6 +30,12 @@ export const THEMES: ThemeDef[] = [
     swatch: { gate: '#0d110d', paper: '#100e0c', primary: '#46f27a', accent: '#ffb638', seal: '#46f27a' },
   },
   {
+    value: 'gift',
+    label: 'เซอร์ไพรส์ 🎁',
+    desc: 'เปิดกล่องของขวัญ · รูปหมุน 3D + คอนเฟตตี',
+    swatch: { gate: '#3a1a5c', paper: '#180f2e', primary: '#ffd66b', accent: '#ff5fa8', seal: '#ff4d6d' },
+  },
+  {
     value: 'valentine',
     label: 'วาเลนไทน์',
     desc: 'ชมพู–แดง–ทอง หวานสดใส',
