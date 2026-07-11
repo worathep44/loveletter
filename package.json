@@ -9,8 +9,7 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "start": "node .output/server/index.mjs",
-    "postinstall": "nuxt prepare"
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "drizzle-orm": "^0.38.4",
