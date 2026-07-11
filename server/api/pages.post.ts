@@ -33,8 +33,10 @@ export default defineEventHandler(async (event) => {
     createdAt: Date.now(),
   })
 
-  // สร้าง URL สาธารณะจาก host ที่เรียกเข้ามา (รองรับ dev/prod/หลายโดเมน)
-  const origin = getRequestURL(event).origin
+  // สร้าง URL สาธารณะ: ใช้ NUXT_PUBLIC_SITE_URL ก่อน (แม่นยำหลัง proxy/Railway → https + โดเมนจริง)
+  // ถ้าไม่ได้ตั้ง ค่อย fallback ไปใช้ host ของ request (สะดวกตอน dev)
+  const siteUrl = useRuntimeConfig(event).public.siteUrl?.toString().replace(/\/+$/, '')
+  const origin = siteUrl || getRequestURL(event, { xForwardedHost: true, xForwardedProto: true }).origin
   const url = `${origin}/p/${id}`
   const qr = await QRCode.toDataURL(url, {
     margin: 1,
