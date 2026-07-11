@@ -29,8 +29,51 @@ function removeBeat(i: number) { timeline.value.splice(i, 1) }
 
 const loading = ref(false)
 const result = ref<{ id: string; url: string; qr: string } | null>(null)
+const justCreated = ref(false)
 const errorMsg = ref('')
 const copied = ref(false)
+const resultEl = ref<HTMLElement | null>(null)
+
+// ----- รายการจดหมายที่สร้างไว้ (ไว้ค้น/ดึง QR กลับมา) -----
+const list = ref<any[]>([])
+const listLoading = ref(false)
+const q = ref('')
+let searchTimer: any = null
+
+async function loadList() {
+  listLoading.value = true
+  try {
+    const r = await $fetch<{ pages: any[] }>('/api/pages', { query: { q: q.value } })
+    list.value = r.pages
+  } catch { list.value = [] }
+  finally { listLoading.value = false }
+}
+function onSearch() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(loadList, 250)
+}
+onMounted(loadList)
+
+function themeLabel(v: string) { return (THEMES.find(t => t.value === v) || THEMES[0]).label }
+function themeSwatch(v: string) { return (THEMES.find(t => t.value === v) || THEMES[0]).swatch.gate }
+function formatDate(ts: number) {
+  const d = new Date(ts)
+  return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }) +
+    ' · ' + d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+}
+
+async function openShare(id: string) {
+  errorMsg.value = ''
+  try {
+    const r = await $fetch<{ id: string; url: string; qr: string }>(`/api/pages/${id}/share`)
+    result.value = r
+    justCreated.value = false
+    await nextTick()
+    resultEl.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } catch {
+    errorMsg.value = 'ดึงข้อมูลจดหมายไม่สำเร็จ ลองใหม่อีกครั้ง'
+  }
+}
 
 async function submit() {
   errorMsg.value = ''
@@ -47,6 +90,8 @@ async function submit() {
       body: { ...form, timeline: cleanTimeline },
     })
     result.value = res
+    justCreated.value = true
+    loadList() // รีเฟรชรายการให้เห็นอันที่เพิ่งสร้าง
   } catch (e: any) {
     errorMsg.value = e?.data?.statusMessage || e?.statusMessage || 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง'
   } finally {
@@ -151,19 +196,19 @@ function reset() {
       </section>
 
       <!-- ผลลัพธ์ -->
-      <section class="panel result">
+      <section ref="resultEl" class="panel result">
         <template v-if="!result">
           <div class="empty">
             <div class="emoji">🔗</div>
             <h2>QR & ลิงก์จะขึ้นตรงนี้</h2>
-            <p>กรอกข้อมูลด้านซ้ายแล้วกด “สร้างจดหมาย”</p>
+            <p>กรอกข้อมูลด้านซ้ายแล้วกด “สร้างจดหมาย” หรือกดรายการด้านล่างเพื่อดึงกลับมา</p>
           </div>
         </template>
 
         <template v-else>
           <div class="done">
-            <div class="check">✓</div>
-            <h2>สร้างสำเร็จ!</h2>
+            <div class="check">{{ justCreated ? '✓' : '🔗' }}</div>
+            <h2>{{ justCreated ? 'สร้างสำเร็จ!' : 'QR & ลิงก์' }}</h2>
           </div>
 
           <div class="qrbox">
@@ -184,6 +229,32 @@ function reset() {
         </template>
       </section>
     </main>
+
+    <!-- รายการจดหมายที่สร้างไว้ -->
+    <section class="listpanel">
+      <div class="listhead">
+        <div>
+          <h2>จดหมายที่สร้างไว้</h2>
+          <p class="listsub">กดรายการเพื่อดึง QR + ลิงก์กลับมา (เผื่อลูกค้าลืม)</p>
+        </div>
+        <input v-model="q" @input="onSearch" class="search" placeholder="🔍 ค้นชื่อผู้ส่ง/ผู้รับ..." />
+      </div>
+
+      <div v-if="listLoading" class="lmsg">กำลังโหลด...</div>
+      <div v-else-if="!list.length" class="lmsg">
+        {{ q ? 'ไม่พบจดหมายที่ตรงกับคำค้น' : 'ยังไม่มีจดหมายที่สร้างไว้' }}
+      </div>
+      <ul v-else class="rows">
+        <li v-for="p in list" :key="p.id" class="lrow" @click="openShare(p.id)">
+          <span class="ldot" :style="{ background: themeSwatch(p.theme) }"></span>
+          <div class="lmain">
+            <div class="lname">{{ p.sender }} <b>→</b> {{ p.recipient }}</div>
+            <div class="lmeta">{{ themeLabel(p.theme) }} · {{ formatDate(p.createdAt) }}</div>
+          </div>
+          <span class="lgo">ดู QR ▸</span>
+        </li>
+      </ul>
+    </section>
   </div>
 </template>
 
@@ -298,4 +369,25 @@ function reset() {
 .open{flex:1;text-align:center;text-decoration:none;background:linear-gradient(100deg,#c0304a,#e0662f);color:#fff;padding:13px;border-radius:12px;font-weight:700;font-size:15px}
 .ghost2{border:1.5px solid #ece0d4;background:#fff;color:#5a4a40;padding:13px 18px;border-radius:12px;cursor:pointer;font:inherit;font-weight:600}
 .hint{font-size:12.5px;color:#a89a8c;margin-top:14px;text-align:center;line-height:1.5}
+
+/* ===== รายการจดหมายที่สร้างไว้ ===== */
+.listpanel{max-width:1080px;margin:22px auto 0;background:#fff;border:1px solid #eee3d8;border-radius:22px;
+  padding:24px 26px;box-shadow:0 20px 50px -34px rgba(120,60,40,.4)}
+.listhead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.listhead h2{font-size:19px;font-weight:700;color:#2a2320}
+.listsub{font-size:13px;color:#a89a8c;margin-top:3px}
+.search{font:inherit;font-size:14px;padding:10px 14px;border:1.5px solid #ece0d4;border-radius:11px;
+  background:#fdfbf8;color:#2a2320;min-width:230px;flex:0 1 260px}
+.search:focus{outline:none;border-color:#e0662f;box-shadow:0 0 0 3px rgba(224,102,47,.14)}
+.lmsg{padding:26px 4px;text-align:center;color:#b0a094;font-size:14px}
+.rows{list-style:none;display:flex;flex-direction:column;gap:7px}
+.lrow{display:flex;align-items:center;gap:13px;padding:12px 14px;border:1px solid #f0e7dc;border-radius:13px;
+  cursor:pointer;background:#fffdfa;transition:border-color .12s, background .12s, transform .1s}
+.lrow:hover{border-color:#e0662f;background:#fff8f2;transform:translateX(2px)}
+.ldot{flex:none;width:15px;height:15px;border-radius:50%;box-shadow:inset 0 -2px 4px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.2)}
+.lmain{flex:1;min-width:0}
+.lname{font-size:15px;font-weight:600;color:#3a2d26;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lname b{color:#c0562f;font-weight:700;margin:0 2px}
+.lmeta{font-size:12px;color:#a89a8c;margin-top:2px}
+.lgo{flex:none;font-size:13px;font-weight:600;color:#c0562f}
 </style>
