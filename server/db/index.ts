@@ -35,6 +35,7 @@ export function ensureSchema() {
       // เพิ่มคอลัมน์ใหม่แบบ idempotent (ตารางเดิมที่มีอยู่แล้วจะได้คอลัมน์นี้ด้วย)
       await sql`ALTER TABLE pages ADD COLUMN IF NOT EXISTS hero_photo TEXT;`
       await sql`ALTER TABLE pages ADD COLUMN IF NOT EXISTS photos TEXT;`
+      await sql`ALTER TABLE pages ADD COLUMN IF NOT EXISTS videos TEXT;`
     })().catch((e) => { schemaReady = null; throw e })
   }
   return schemaReady

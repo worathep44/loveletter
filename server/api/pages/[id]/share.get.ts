@@ -13,9 +13,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'ไม่พบจดหมายนี้' })
   }
 
-  const siteUrl = useRuntimeConfig(event).public.siteUrl?.toString().replace(/\/+$/, '')
-  const origin = siteUrl || getRequestURL(event, { xForwardedHost: true, xForwardedProto: true }).origin
-  const url = `${origin}/p/${id}`
+  const url = `${publicOrigin(event)}/p/${id}`
   const qr = await QRCode.toDataURL(url, {
     margin: 1,
     width: 480,

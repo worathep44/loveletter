@@ -94,6 +94,31 @@ async function pickPhotos(e: Event) {
 }
 function removePhoto(i: number) { photos.value.splice(i, 1) }
 
+// ----- วิดีโอ: ลิงก์ (ฟรี) + อัปตรง (พรีเมียม) -----
+const videos = ref<VideoItem[]>([])
+const videoLink = ref('')
+const videoErr = ref('')
+const videoUploading = ref(false)
+
+function addVideoLink() {
+  const v = detectVideo(videoLink.value)
+  if (!v) { videoErr.value = 'ลิงก์ไม่ถูกต้อง — รองรับ YouTube / TikTok (ใส่ลิงก์เต็ม)'; return }
+  videos.value.push(v); videoLink.value = ''; videoErr.value = ''
+}
+async function pickVideoFile(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  videoUploading.value = true; videoErr.value = ''
+  try {
+    const fd = new FormData(); fd.append('file', file, file.name || 'video.mp4')
+    const r = await $fetch<{ url: string }>('/api/upload', { method: 'POST', body: fd })
+    videos.value.push({ url: r.url, source: 'file' })
+  } catch (err: any) {
+    videoErr.value = err?.data?.statusMessage || 'อัปวิดีโอไม่สำเร็จ (ไฟล์ใหญ่/คีย์)'
+  } finally { videoUploading.value = false; (e.target as HTMLInputElement).value = '' }
+}
+function removeVideo(i: number) { videos.value.splice(i, 1) }
+
 const loading = ref(false)
 const result = ref<{ id: string; url: string; qr: string } | null>(null)
 const justCreated = ref(false)
@@ -154,7 +179,7 @@ async function submit() {
     const cleanTimeline = timeline.value.filter(b => b.title.trim() || b.desc.trim() || b.photo)
     const res = await $fetch<{ id: string; url: string; qr: string }>('/api/pages', {
       method: 'POST',
-      body: { ...form, photos: photos.value, timeline: cleanTimeline },
+      body: { ...form, photos: photos.value, videos: videos.value, timeline: cleanTimeline },
     })
     result.value = res
     justCreated.value = true
@@ -262,6 +287,28 @@ function reset() {
               <input type="file" accept="image/*" multiple @change="pickPhotos" :disabled="galleryUploading" />
               <span>{{ galleryUploading ? galleryProgress : '＋' }}</span>
             </label>
+          </div>
+        </div>
+
+        <div class="fld">
+          <span>วิดีโอ <em>(ลิงก์ YouTube/TikTok = ฟรี · อัปไฟล์ตรง = พรีเมียม เปลืองคอสต์)</em></span>
+          <div class="vid-row">
+            <input v-model="videoLink" placeholder="วางลิงก์ YouTube / TikTok..." @keyup.enter="addVideoLink" />
+            <button type="button" class="vid-add" @click="addVideoLink">＋ เพิ่มลิงก์</button>
+          </div>
+          <label class="vid-up" :class="{ busy: videoUploading }">
+            <input type="file" accept="video/*" @change="pickVideoFile" :disabled="videoUploading" />
+            {{ videoUploading ? 'กำลังอัปโหลด...' : '⬆ อัปไฟล์วิดีโอ (พรีเมียม · ≤60MB)' }}
+          </label>
+          <p v-if="videoErr" class="vid-err">{{ videoErr }}</p>
+          <div v-if="videos.length" class="vid-list">
+            <div v-for="(v, i) in videos" :key="i" class="vid-item">
+              <span class="vid-badge" :class="v.source">
+                {{ v.source === 'youtube' ? '▶ YouTube' : v.source === 'tiktok' ? '♪ TikTok' : '⬆ ไฟล์' }}
+              </span>
+              <span class="vid-url">{{ v.url }}</span>
+              <button type="button" class="vid-x" @click="removeVideo(i)">✕</button>
+            </div>
           </div>
         </div>
 
@@ -468,6 +515,21 @@ function reset() {
 .gadd.busy{opacity:.6;font-size:13px}
 .gadd input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .gadd.busy input{pointer-events:none}
+
+.vid-row{display:flex;gap:8px}
+.vid-row input{flex:1}
+.vid-add{flex:none;border:none;background:#2a2320;color:#fff;padding:0 14px;border-radius:12px;cursor:pointer;font:inherit;font-weight:600;font-size:13px}
+.vid-up{position:relative;display:inline-flex;align-items:center;cursor:pointer;margin-top:9px;
+  font-size:13.5px;font-weight:600;color:#8a5a34;background:#fbf3ea;border:1.5px dashed #e0c3a0;padding:9px 15px;border-radius:11px}
+.vid-up.busy{opacity:.6}
+.vid-up input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.vid-err{color:#c0304a;font-size:13px;margin-top:8px}
+.vid-list{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.vid-item{display:flex;align-items:center;gap:9px;background:#fbf6f0;border:1px solid #eee3d8;border-radius:10px;padding:7px 10px}
+.vid-badge{flex:none;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:20px;color:#fff;background:#c0562f}
+.vid-badge.youtube{background:#e0304a}.vid-badge.tiktok{background:#111}.vid-badge.file{background:#8a5a34}
+.vid-url{flex:1;font-size:12px;color:#9a8778;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vid-x{flex:none;border:none;background:#f4e3dc;color:#c0304a;width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:12px}
 .rm{border:none;background:#f4e3dc;color:#c0304a;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:13px}
 .ghost{border:1px solid #e6d5c4;background:#fff;color:#c0562f;padding:6px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600}
 

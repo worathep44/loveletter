@@ -3,7 +3,8 @@ import { nanoid } from 'nanoid'
 // POST /api/upload  (multipart, field "file")  → อัปโหลดรูปเข้า Supabase Storage คืน { url }
 // ต้องตั้ง env: SUPABASE_SERVICE_KEY  (SUPABASE_URL ถ้าไม่ตั้งจะเดาจาก DATABASE_URL ให้)
 const BUCKET = 'photos'
-const MAX_BYTES = 8 * 1024 * 1024
+const MAX_IMAGE = 8 * 1024 * 1024
+const MAX_VIDEO = 60 * 1024 * 1024 // วิดีโอสั้นๆ (พรีเมียม — เปลือง egress)
 
 // เดา https://<ref>.supabase.co จาก username ของ DATABASE_URL (postgres.<ref>)
 function supabaseUrl(): string {
@@ -42,11 +43,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'ไม่พบไฟล์รูป' })
   }
   const mime = file.type || 'image/jpeg'
-  if (!mime.startsWith('image/')) {
-    throw createError({ statusCode: 400, statusMessage: 'อัปโหลดได้เฉพาะรูปภาพ' })
+  const isVideo = mime.startsWith('video/')
+  if (!mime.startsWith('image/') && !isVideo) {
+    throw createError({ statusCode: 400, statusMessage: 'อัปโหลดได้เฉพาะรูปหรือวิดีโอ' })
   }
-  if (file.data.length > MAX_BYTES) {
-    throw createError({ statusCode: 413, statusMessage: 'รูปใหญ่เกินไป (จำกัด 8MB)' })
+  if (file.data.length > (isVideo ? MAX_VIDEO : MAX_IMAGE)) {
+    throw createError({ statusCode: 413, statusMessage: isVideo ? 'วิดีโอใหญ่เกินไป (จำกัด 60MB)' : 'รูปใหญ่เกินไป (จำกัด 8MB)' })
   }
 
   await ensureBucket(base, key)

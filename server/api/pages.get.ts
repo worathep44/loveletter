@@ -23,8 +23,6 @@ export default defineEventHandler(async (event) => {
     : await db.select(cols).from(pages)
         .orderBy(desc(pages.createdAt)).limit(200)
 
-  const siteUrl = useRuntimeConfig(event).public.siteUrl?.toString().replace(/\/+$/, '')
-  const origin = siteUrl || getRequestURL(event, { xForwardedHost: true, xForwardedProto: true }).origin
-
+  const origin = publicOrigin(event)
   return { pages: rows.map(r => ({ ...r, url: `${origin}/p/${r.id}` })) }
 })

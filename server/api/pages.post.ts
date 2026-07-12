@@ -24,6 +24,11 @@ export default defineEventHandler(async (event) => {
   if (Array.isArray(photos)) photos = JSON.stringify(photos.filter(Boolean))
   else if (typeof photos !== 'string') photos = null
 
+  // videos: [{url,source,id,poster}]
+  let videos = body?.videos
+  if (Array.isArray(videos)) videos = JSON.stringify(videos.filter((v: any) => v?.url))
+  else if (typeof videos !== 'string') videos = null
+
   const id = nanoid(10)
   await db.insert(pages).values({
     id,
@@ -35,6 +40,7 @@ export default defineEventHandler(async (event) => {
     videoUrl: body?.videoUrl ? body.videoUrl.toString() : null,
     heroPhoto: body?.heroPhoto ? body.heroPhoto.toString() : null,
     photos,
+    videos,
     timeline,
     status: 'paid',
     createdAt: Date.now(),
@@ -42,9 +48,7 @@ export default defineEventHandler(async (event) => {
 
   // สร้าง URL สาธารณะ: ใช้ NUXT_PUBLIC_SITE_URL ก่อน (แม่นยำหลัง proxy/Railway → https + โดเมนจริง)
   // ถ้าไม่ได้ตั้ง ค่อย fallback ไปใช้ host ของ request (สะดวกตอน dev)
-  const siteUrl = useRuntimeConfig(event).public.siteUrl?.toString().replace(/\/+$/, '')
-  const origin = siteUrl || getRequestURL(event, { xForwardedHost: true, xForwardedProto: true }).origin
-  const url = `${origin}/p/${id}`
+  const url = `${publicOrigin(event)}/p/${id}`
   const qr = await QRCode.toDataURL(url, {
     margin: 1,
     width: 480,

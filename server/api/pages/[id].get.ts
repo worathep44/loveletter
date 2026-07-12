@@ -25,6 +25,12 @@ export default defineEventHandler(async (event) => {
     try { photos = JSON.parse(row.photos) } catch { photos = [] }
   }
 
+  // แปลง videos JSON string → array
+  let videos: any[] = []
+  if (row.videos) {
+    try { videos = JSON.parse(row.videos) } catch { videos = [] }
+  }
+
   // คำนวณจำนวนวันที่รักกัน จาก startDate ถึงวันนี้
   let days: number | null = null
   if (row.startDate) {
@@ -34,5 +40,5 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  return { ...row, timeline, photos, days }
+  return { ...row, timeline, photos, videos, days }
 })
